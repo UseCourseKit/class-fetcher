@@ -1,21 +1,23 @@
 {
   "name": "@usecoursekit/class-fetcher",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "require": "./dist/index.js",
       "import": "./dist/index.mjs",
       "types": "./dist/index.d.ts"
     }
   },
   "description": "",
   "scripts": {
-    "build": "tsc",
-    "copy-files": "cp -R ./src/umich/soc ./dist/umich/soc",
+    "build": "tsup",
+    "copy-files": "cp -R ./src/umich/soc ./dist/soc",
     "release": "bumpp --commit --push --tag && npm publish",
     "prepublishOnly": "bun run build && bun run copy-files",
-    "test": "bun test"
+    "test": "vitest"
   },
   "files": [
     "dist"
@@ -38,11 +40,16 @@
     "bumpp": "^9.0.0",
     "bun-types": "^0.5.7",
     "ts-standard": "^12.0.2",
-    "typescript": "^4.9.5"
+    "tsup": "^6.6.3",
+    "typescript": "^4.9.5",
+    "vitest": "^0.29.1"
   },
   "dependencies": {
+    "@types/better-sqlite3": "^7.6.3",
     "@types/papaparse": "^5.3.7",
+    "better-sqlite3": "^8.1.0",
     "dayjs": "^1.11.7",
+    "dotenv": "^16.0.3",
     "minisearch": "^6.0.1"
   }
 }
