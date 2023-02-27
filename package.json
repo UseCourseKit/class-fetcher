@@ -1,23 +1,24 @@
 {
   "name": "@usecoursekit/class-fetcher",
-  "version": "0.0.2",
-  "main": "dist/index.js",
+  "version": "0.1.0",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "require": "./dist/index.js",
       "import": "./dist/index.mjs",
       "types": "./dist/index.d.ts"
     }
   },
   "description": "",
   "scripts": {
+    "build": "tsc",
+    "copy-files": "cp -R ./src/umich/soc ./dist/umich/soc",
     "release": "bumpp --commit --push --tag && npm publish",
+    "prepublishOnly": "bun run build && bun run copy-files",
     "test": "bun test"
   },
   "files": [
-    "src"
+    "dist"
   ],
   "keywords": [
     "bun"
