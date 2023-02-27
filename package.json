@@ -1,6 +1,6 @@
 {
-  "name": "class-fetcher",
-  "version": "0.0.0",
+  "name": "@usecoursekit/class-fetcher",
+  "version": "0.0.1",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -25,12 +25,12 @@
     "bun"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/wobsoriano/pkg-name#readme",
+  "homepage": "https://github.com/UseCourseKit/class-fetcher#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wobsoriano/pkg-name.git"
+    "url": "git+https://github.com/UseCourseKit/class-fetcher.git/"
   },
-  "bugs": "https://github.com/wobsoriano/pkg-name/issues",
+  "bugs": "https://github.com/UseCourseKit/class-fetcher/issues",
   "author": "Michael Peng <michael@mcmoo.org>",
   "devDependencies": {
     "bumpp": "^9.0.0",
