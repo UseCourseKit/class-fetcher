@@ -1,4 +1,4 @@
-import { Database, Statement } from 'bun:sqlite'
+import Database from 'better-sqlite3'
 import { join } from 'path'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
@@ -58,7 +58,9 @@ function storedCopy (str: string): string {
   if (!stringStore.has(str)) {
     stringStore.set(str, str)
   }
-  return stringStore.get(str)!
+  const copy = stringStore.get(str)
+  if (copy === undefined) throw new Error()
+  return copy
 }
 
 export function parseCsvRow (row: CsvRow): StoredMeetingInfo {
@@ -79,16 +81,16 @@ export function parseCsvRow (row: CsvRow): StoredMeetingInfo {
 }
 
 export class CsvCatalogStore {
-  private db: Database
-  private lookupQuery: Statement
+  private readonly db: Database.Database
+  private readonly lookupQuery: Database.Statement
 
-  constructor(term: number) {
-    this.db = new Database(join(import.meta.dir, 'soc', `${term}.sqlite3`), {readonly: true})
-    this.lookupQuery = this.db.query('SELECT * FROM sections WHERE `Class Nbr` = ?1;')
+  constructor (term: number) {
+    this.db = new Database(join(__dirname, 'soc', `${term}.sqlite3`), { readonly: true })
+    this.lookupQuery = this.db.prepare('SELECT * FROM sections WHERE `Class Nbr` = ?')
   }
 
   lookupByClassNumber (classNumber: number): StoredMeetingInfo[] {
-    const rows: CsvRow[] = this.lookupQuery.all(classNumber.toString()) as any[]
+    const rows: CsvRow[] = this.lookupQuery.all(classNumber.toString())
     return rows.map(parseCsvRow)
   }
 }

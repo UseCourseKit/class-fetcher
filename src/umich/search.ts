@@ -1,4 +1,6 @@
-import MiniSearch from 'minisearch'
+import { trieCreate, trieSet, trieSuggest, Trie } from '@smikhalevski/trie'
+import { readFile } from 'fs/promises'
+import { join } from 'path'
 
 interface CourseEntry {
   school: string
@@ -9,18 +11,36 @@ interface CourseEntry {
 }
 
 export default class SearchEngine {
-  private constructor (private readonly engine: MiniSearch<CourseEntry>) {}
+  private static readonly spaceRegex = /\s+/g
+  private readonly index: Trie<CourseEntry>
+  private readonly classNumberMap: Map<number, CourseEntry[]> = new Map()
+
+  private constructor (catalogList: CourseEntry[]) {
+    this.index = trieCreate<CourseEntry>()
+    for (const entry of catalogList) {
+      trieSet(this.index, entry.courseCode.toLowerCase().replaceAll(SearchEngine.spaceRegex, ''), entry)
+      if (this.classNumberMap.has(entry.classNumber)) {
+        this.classNumberMap.get(entry.classNumber)?.push(entry)
+      } else {
+        this.classNumberMap.set(entry.classNumber, [entry])
+      }
+    }
+  }
 
   static async create (term: number): Promise<SearchEngine> {
-    const engine = new MiniSearch<CourseEntry>({
-      fields: ['classNumber', 'courseCode', 'instructor'],
-      storeFields: ['courseCode']
-    })
-    engine.addAll(((await import(`./soc/${term}.json`)).default as any[]).map((item, i) => ({...item, id: i})))
-    return new SearchEngine(engine)
+    const file = await readFile(join(__dirname, 'soc', `${term}.json`), { encoding: 'utf-8' })
+    const catalogList: CourseEntry[] = JSON.parse(file)
+    return new SearchEngine(catalogList)
   }
 
   async runSearch (query: string): Promise<string[]> {
-    return this.engine.search(query).map(result => result.courseCode)
+    const normalizedQuery = query.toLowerCase().replaceAll(SearchEngine.spaceRegex, '')
+    const suggestions = trieSuggest(this.index, normalizedQuery) ?? []
+    const suggestedEntries = suggestions.map(item => item.value).filter(it => it !== undefined) as CourseEntry[]
+
+    const queryNumber = parseInt(query, 10)
+    const matchedEntries: CourseEntry[] = isNaN(queryNumber) ? [] : (this.classNumberMap.get(queryNumber) ?? [])
+
+    return suggestedEntries.concat(matchedEntries).map(it => it.courseCode)
   }
 }

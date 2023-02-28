@@ -1,14 +1,16 @@
-import { describe, it, expect } from 'bun:test'
+import { describe, it, expect } from 'vitest'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import { DayOfWeek, EnrollmentStats, Section } from '../../src/entities'
 import { UMichCatalog } from '../../src/umich/catalog'
+import * as dotenv from 'dotenv'
 
+dotenv.config()
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
-const client = new UMichCatalog(Bun.env['UMICH_CLIENT_ID']!, Bun.env['UMICH_CLIENT_SECRET']!, 2420)
+const client = new UMichCatalog(process.env['UMICH_CLIENT_ID']!, process.env['UMICH_CLIENT_SECRET']!, 2420)
 
 describe("test catalog", () => {
   it("should fetch full sections in course schedule", async () => {

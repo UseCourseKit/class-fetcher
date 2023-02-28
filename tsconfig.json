@@ -9,9 +9,10 @@
     "noUnusedLocals": true,
     "noImplicitAny": true,
     "allowJs": true,
-    "noEmit": true,
+    "declaration": true,
     "outDir": "dist",
     "resolveJsonModule": true,
     "types": ["bun-types"]
-  }
+  },
+  "include": ["src/**/*"]
 }

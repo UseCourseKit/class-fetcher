@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'bun:test'
+import { describe, it, expect } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Meeting } from '../../src/entities'
@@ -21,10 +21,10 @@ function buildMeetingsMap(sections: AllSectionsSectionJson[]): {[code: string]: 
 
 describe('enrollment group generation', () => {
   it('should compute the correct clusters for a variety of popular courses', () => {
-    const files = readdirSync(join(import.meta.dir, 'atlas-samples'))
+    const files = readdirSync(join(__dirname, 'atlas-samples'))
     for (const file of files) {
-      const expectedClusterList = JSON.parse(readFileSync(join(import.meta.dir, 'atlas-samples', file), {encoding: 'utf-8'})).map((cluster: any[]) => cluster.filter(section => !section.includes('MID')))
-      let sections = JSON.parse(readFileSync(join(import.meta.dir, 'soc-samples', file), {encoding: 'utf-8'})).getSOCSectionsResponse.Section
+      const expectedClusterList = JSON.parse(readFileSync(join(__dirname, 'atlas-samples', file), {encoding: 'utf-8'})).map((cluster: any[]) => cluster.filter(section => !section.includes('MID')))
+      let sections = JSON.parse(readFileSync(join(__dirname, 'soc-samples', file), {encoding: 'utf-8'})).getSOCSectionsResponse.Section
       if (!(sections instanceof Array)) sections = [sections];
       const meetingsMap = buildMeetingsMap(sections)
       expect(Array.from(allClusters(sections, meetingsMap)).sort()).toEqual(expectedClusterList.sort())

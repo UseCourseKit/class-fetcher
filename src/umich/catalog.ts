@@ -26,7 +26,7 @@ const endpointPrefix = Object.freeze('https://gw.api.it.umich.edu/um/Curriculum/
 export class UMichCatalog implements CourseCatalog {
   private accessToken: { value: string, expireAt: Date } | null = null
   private searcher: SearchEngine | null = null
-  private localIndex: CsvCatalogStore
+  private readonly localIndex: CsvCatalogStore
 
   constructor (
     private readonly clientId: string,
@@ -49,7 +49,7 @@ export class UMichCatalog implements CourseCatalog {
       this.searcher = await SearchEngine.create(this.termCode)
     }
     assert(this.searcher !== null)
-    return await this.searcher.runSearch(query)
+    return Array.from(new Set(await this.searcher.runSearch(query)))
   }
 
   async fetchCourseSchedule (course: string): Promise<CourseSchedule | null> {
@@ -59,7 +59,7 @@ export class UMichCatalog implements CourseCatalog {
     // Because the Sections endpoint does not provide StartDate and EndDate for meetings
     // (and because we can't predict the StartDate and EndDate from the SessionDescr alone---see SOC research,)
     // we have to ask about each meeting in a separate request.
-    const meetingsMap: {[code: string]: Meeting[]} = Object.fromEntries(
+    const meetingsMap: { [code: string]: Meeting[] } = Object.fromEntries(
       await Promise.all(sections.map(
         async s => [s.SectionNumber, await this.resolveSectionMeetings(course, s)]))
     )
@@ -240,7 +240,7 @@ export class UMichCatalog implements CourseCatalog {
       'https://gw.api.it.umich.edu/um/oauth2/token', {
         method: 'POST',
         headers: {
-          'Accept': 'application/json',
+          Accept: 'application/json',
           'Content-Type': 'application/x-www-form-urlencoded'
         },
         body: new URLSearchParams({

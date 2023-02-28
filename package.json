@@ -14,7 +14,7 @@
   "description": "",
   "scripts": {
     "build": "tsup",
-    "copy-files": "cp -R ./src/umich/soc ./dist/soc",
+    "copy-files": "cp -R ./src/umich/soc ./dist/",
     "release": "bumpp --commit --push --tag && npm publish",
     "prepublishOnly": "bun run build && bun run copy-files",
     "test": "vitest"
