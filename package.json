@@ -1,6 +1,6 @@
 {
   "name": "@usecoursekit/class-fetcher",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -45,6 +45,7 @@
     "vitest": "^0.29.1"
   },
   "dependencies": {
+    "@smikhalevski/trie": "^2.2.0",
     "@types/better-sqlite3": "^7.6.3",
     "@types/papaparse": "^5.3.7",
     "better-sqlite3": "^8.1.0",
