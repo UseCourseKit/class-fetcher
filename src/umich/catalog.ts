@@ -16,6 +16,8 @@ dayjs.extend(timezone)
 
 // We unfortunately cannot retrieve past term codes via the SOC API
 export const termCodes = Object.freeze({
+  'Fall 2023': 2460,
+  'Spring 2023': 2430,
   'Winter 2023': 2420,
   'Fall 2022': 2410,
   'Winter 2022': 2370,
@@ -25,43 +27,35 @@ const endpointPrefix = Object.freeze('https://gw.api.it.umich.edu/um/Curriculum/
 
 export class UMichCatalog implements CourseCatalog {
   private accessToken: { value: string, expireAt: Date } | null = null
-  private searcher: SearchEngine | null = null
-  private readonly localIndex: CsvCatalogStore
+  private readonly searchers: { [term: string]: SearchEngine } = {}
+  private readonly localIndexes: { [term: string]: CsvCatalogStore } = {}
 
   constructor (
     private readonly clientId: string,
-    private readonly clientSecret: string,
-    private readonly termCode: typeof termCodes[keyof typeof termCodes]) {
-    this.localIndex = new CsvCatalogStore(termCode)
-  }
+    private readonly clientSecret: string) {}
 
   /**
    * Indexes the CSV file from the registrar for `searchCourses` and lookups when we are missing `startDate` and `endDate`.
    */
-  async indexCatalogFile (): Promise<void> {
-    if (this.searcher === null) {
-      this.searcher = await SearchEngine.create(this.termCode)
-    }
+  async indexCatalogFile (term: keyof typeof termCodes): Promise<void> {
+    this.searchers[term] ??= await SearchEngine.create(termCodes[term])
   }
 
-  async searchCourses (query: string): Promise<string[]> {
-    if (this.searcher === null) {
-      this.searcher = await SearchEngine.create(this.termCode)
-    }
-    assert(this.searcher !== null)
-    return Array.from(new Set(await this.searcher.runSearch(query)))
+  async searchCourses (term: string, query: string): Promise<string[]> {
+    await this.indexCatalogFile(term as keyof typeof termCodes)
+    return Array.from(new Set(await this.searchers[term].runSearch(query)))
   }
 
-  async fetchCourseSchedule (course: string): Promise<CourseSchedule | null> {
+  async fetchCourseSchedule (term: string, course: string): Promise<CourseSchedule | null> {
     const [subject, number] = course.split(/\s+/)
-    const sections = await this.fetchCourseSections(subject, number)
+    const sections = await this.fetchCourseSections(term, subject, number)
     if (sections === null) return null
     // Because the Sections endpoint does not provide StartDate and EndDate for meetings
     // (and because we can't predict the StartDate and EndDate from the SessionDescr alone---see SOC research,)
     // we have to ask about each meeting in a separate request.
     const meetingsMap: { [code: string]: Meeting[] } = Object.fromEntries(
       await Promise.all(sections.map(
-        async s => [s.SectionNumber, await this.resolveSectionMeetings(course, s)]))
+        async s => [s.SectionNumber, await this.resolveSectionMeetings(term, course, s)]))
     )
     const fullSections = await Promise.all(
       sections.map(async s => await this.elaborateSection(s, meetingsMap[s.SectionNumber])))
@@ -82,11 +76,11 @@ export class UMichCatalog implements CourseCatalog {
     }
   }
 
-  private async resolveSectionMeetings (course: string, section: AllSectionsSectionJson): Promise<Meeting[]> {
+  private async resolveSectionMeetings (term: string, course: string, section: AllSectionsSectionJson): Promise<Meeting[]> {
     // The meetings only need start and end dates. We'll rely on the CSV file for this.
     // If the CSV file doesn't have this, we use /Meetings
     try {
-      const storedMeetings = await this.lookupClassStore(section.ClassNumber)
+      const storedMeetings = await this.lookupClassStore(term, section.ClassNumber)
       if (storedMeetings.length === 0) throw new Error('no stored meetings')
       const rawPartialMeetings = arrayify(section.Meeting ?? [])
       if (rawPartialMeetings.length !== storedMeetings.length) { throw new Error(`different numbers of meetings between local CSV and API response for ${course}, ${section.SectionNumber}`) }
@@ -99,15 +93,16 @@ export class UMichCatalog implements CourseCatalog {
         TopicDescr: storedMeetings[i].courseTitle
       })).filter(it => it !== null) as Meeting[]
     } catch (_: any) {
-      const fullMeetings = await this.fetchSectionMeetings(course, section.SectionNumber.toString())
+      const fullMeetings = await this.fetchSectionMeetings(term, course, section.SectionNumber.toString())
       assert(fullMeetings !== null)
       return fullMeetings
     }
   }
 
-  private async fetchCourseSections (subject: string, number: string): Promise<AllSectionsSectionJson[] | null> {
+  private async fetchCourseSections (term: string, subject: string, number: string): Promise<AllSectionsSectionJson[] | null> {
+    const termCode = termCodes[term as keyof typeof termCodes]
     const res = await this.get(
-      `/Terms/${this.termCode}/Schools/UM/Subjects/${subject}/CatalogNbrs/${number}/Sections?IncludeAllSections=Y`
+      `/Terms/${termCode}/Schools/UM/Subjects/${subject}/CatalogNbrs/${number}/Sections?IncludeAllSections=Y`
     )
     const json: any = await res.json()
     const sectionsRaw = json.getSOCSectionsResponse.Section
@@ -120,10 +115,11 @@ export class UMichCatalog implements CourseCatalog {
   // Find the section and its AllSectionsMeetingElements, then try to resolve the meetings
   // First solution: Use the /Sections/XXX/Meetings endpoint
   // Second solution: Use the dates in soc/XXXX.csv
-  private async fetchSectionMeetings (course: string, section: string): Promise<Meeting[] | null> {
+  private async fetchSectionMeetings (term: string, course: string, section: string): Promise<Meeting[] | null> {
+    const termCode = termCodes[term as keyof typeof termCodes]
     const [subject, number] = course.split(/\s+/)
     const res = await this.get(
-      `/Terms/${this.termCode}/Schools/UM/Subjects/${subject}/CatalogNbrs/${number}/Sections/${section}/Meetings`
+      `/Terms/${termCode}/Schools/UM/Subjects/${subject}/CatalogNbrs/${number}/Sections/${section}/Meetings`
     )
     const json: any = await res.json()
     const meetings: FullMeetingElement[] = arrayify(json?.getSOCMeetingsResponse?.Meeting)
@@ -131,10 +127,11 @@ export class UMichCatalog implements CourseCatalog {
     return meetings.map(parseMeeting).filter(it => it !== null) as Meeting[]
   }
 
-  private async fetchSectionInstructors (course: string, section: string): Promise<Section['instructors'] | null> {
+  private async fetchSectionInstructors (term: string, course: string, section: string): Promise<Section['instructors'] | null> {
+    const termCode = termCodes[term as keyof typeof termCodes]
     const [subject, number] = course.split(/\s+/)
     const res = await this.get(
-      `/Terms/${this.termCode}/Schools/UM/Subjects/${subject}/CatalogNbrs/${number}/Sections/${section}/Instructors`
+      `/Terms/${termCode}/Schools/UM/Subjects/${subject}/CatalogNbrs/${number}/Sections/${section}/Instructors`
     )
     const json: any = await res.json()
     const instructorsRaw: FullInstructor[] = arrayify(json?.getSOCInstructorsResponse?.Instructor)
@@ -142,14 +139,16 @@ export class UMichCatalog implements CourseCatalog {
     return instructorsRaw.map(parseFullInstructor).filter(it => it !== null) as Section['instructors']
   }
 
-  private async lookupClassStore (classNumber: number): Promise<StoredMeetingInfo[]> {
-    return this.localIndex.lookupByClassNumber(classNumber)
+  private async lookupClassStore (term: string, classNumber: number): Promise<StoredMeetingInfo[]> {
+    this.localIndexes[term] ??= new CsvCatalogStore(termCodes[term as keyof typeof termCodes])
+    return this.localIndexes[term].lookupByClassNumber(classNumber)
   }
 
-  async fetchSection (course: string, sectionCode: string): Promise<Section | null> {
+  async fetchSection (term: string, course: string, sectionCode: string): Promise<Section | null> {
+    const termCode = termCodes[term as keyof typeof termCodes]
     const [subject, number] = course.split(/\s+/)
     const res = await this.get(
-      `/Terms/${this.termCode}/Schools/UM/Subjects/${subject}/CatalogNbrs/${number}/Sections/${sectionCode}`
+      `/Terms/${termCode}/Schools/UM/Subjects/${subject}/CatalogNbrs/${number}/Sections/${sectionCode}`
     )
     const json: any = await res.json()
     const section = json.getSOCSectionDetailResponse
@@ -166,9 +165,9 @@ export class UMichCatalog implements CourseCatalog {
     // Combine that with a query for all sections in this class (with hidden sections)
     // (By the way, we can't tell from the raw response whether the hidden section exists)
     const [rawSections, instructors, meetings] = await Promise.all([
-      this.fetchCourseSections(subject, number),
-      this.fetchSectionInstructors(course, sectionCode),
-      this.fetchSectionMeetings(course, sectionCode)
+      this.fetchCourseSections(term, subject, number),
+      this.fetchSectionInstructors(term, course, sectionCode),
+      this.fetchSectionMeetings(term, course, sectionCode)
     ])
     if (meetings === null || meetings.length === 0) return null
     if (rawSections === null) return null
@@ -184,8 +183,9 @@ export class UMichCatalog implements CourseCatalog {
     }
   }
 
-  async fetchClass (classNumber: number): Promise<{ section: Section, course: string } | null> {
-    const res = await this.get(`/Terms/${this.termCode}/Classes/${classNumber}`)
+  async fetchClass (term: string, classNumber: number): Promise<{ section: Section, course: string } | null> {
+    const termCode = termCodes[term as keyof typeof termCodes]
+    const res = await this.get(`/Terms/${termCode}/Classes/${classNumber}`)
     const json: any = await res.json()
     const section: ClassQuerySectionJson = json.getSOCSectionListByNbrResponse.ClassOffered
     if (section === undefined) return null
@@ -206,9 +206,9 @@ export class UMichCatalog implements CourseCatalog {
     }
   }
 
-  async fetchCourseInfo (code: string): Promise<CourseInfo | null> {
+  async fetchCourseInfo (term: string, code: string): Promise<CourseInfo | null> {
     const [subject, number] = code.split(/\s+/)
-    const description = await this.fetchCourseDescription(subject, number)
+    const description = await this.fetchCourseDescription(term, subject, number)
     if (description === null) { return null }
     const split = splitDescription(description)
     return {
@@ -220,9 +220,10 @@ export class UMichCatalog implements CourseCatalog {
     }
   }
 
-  async fetchCourseDescription (subject: string, number: string | number): Promise<string | null> {
+  async fetchCourseDescription (term: string, subject: string, number: string | number): Promise<string | null> {
+    const termCode = termCodes[term as keyof typeof termCodes]
     const res = await this.get(
-      `/Terms/${this.termCode}/Schools/UM/Subjects/${subject}/CatalogNbrs/${number}`
+      `/Terms/${termCode}/Schools/UM/Subjects/${subject}/CatalogNbrs/${number}`
     )
     const json: any = await res.json()
     const descr: string = json.getSOCCourseDescrResponse.CourseDescr

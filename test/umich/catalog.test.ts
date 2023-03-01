@@ -10,14 +10,14 @@ dotenv.config()
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
-const client = new UMichCatalog(process.env['UMICH_CLIENT_ID']!, process.env['UMICH_CLIENT_SECRET']!, 2420)
+const client = new UMichCatalog(process.env['UMICH_CLIENT_ID']!, process.env['UMICH_CLIENT_SECRET']!)
 
 describe("test catalog", () => {
   it("should fetch full sections in course schedule", async () => {
     const course = 'MATH 116'
     const sectionCode = '112'
-    const schedule = await client.fetchCourseSchedule(course)
-    const section = await client.fetchSection(course, sectionCode)
+    const schedule = await client.fetchCourseSchedule('Winter 2023', course)
+    const section = await client.fetchSection('Winter 2023', course, sectionCode)
 
     expect(schedule!.sections[sectionCode]).toEqual(section)
   })
@@ -47,9 +47,9 @@ describe("test catalog", () => {
       }]
     }
 
-    const section = await client.fetchSection('EECS 280', '025')
-    const allSections = await client.fetchCourseSchedule('EECS 280')
-    const klass = await client.fetchClass(21181)
+    const section = await client.fetchSection('Winter 2023', 'EECS 280', '025')
+    const allSections = await client.fetchCourseSchedule('Winter 2023', 'EECS 280')
+    const klass = await client.fetchClass('Winter 2023', 21181)
 
     expect(section).toStrictEqual(correct)
     expect(allSections!.sections['025']).toStrictEqual(correct)
@@ -58,7 +58,7 @@ describe("test catalog", () => {
   })
 
   it('should handle custom start and end dates properly', async () => {
-    const schedule = await client.fetchCourseSchedule('SLAVIC 290')
+    const schedule = await client.fetchCourseSchedule('Winter 2023', 'SLAVIC 290')
     expect(schedule!.code).toStrictEqual('SLAVIC 290')
     expect(schedule!.enrollmentGroups.length).toStrictEqual(11)
 
