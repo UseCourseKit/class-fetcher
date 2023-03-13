@@ -96,8 +96,8 @@ export class UMichCatalog implements CourseCatalog {
       })).filter(it => it !== null) as Meeting[]
     } catch (_: any) {
       const fullMeetings = await this.fetchSectionMeetings(term, course, section.SectionNumber.toString())
-      assert(fullMeetings !== null)
-      return fullMeetings
+      // Unscheduled midterm exams might cause fullMeetings to be null
+      return fullMeetings ?? []
     }
   }
 

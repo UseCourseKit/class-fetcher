@@ -22,6 +22,15 @@ describe("test catalog", () => {
     expect(schedule!.sections[sectionCode]).toEqual(section)
   })
 
+  it("should handle courses with unschedule midterm exams", async () => {
+    const course = 'EECS 203'
+    const sectionCode = '099'
+    const schedule = await client.fetchCourseSchedule('Fall 2023', course)
+    const section = await client.fetchSection('Fall 2023', course, sectionCode)
+
+    expect(schedule!.sections[sectionCode]).toEqual(section)
+  })
+
   // check the return values from all three methods against expected full value
   it('should fetch and parse sections correctly across all three endpoints', async () => {
     const correct: Section & EnrollmentStats = {
