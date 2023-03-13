@@ -1,5 +1,3 @@
-import { String } from 'aws-sdk/clients/cloudsearch'
-
 type MaybeArray<T> = T | T[]
 
 export interface BaseSectionJson {
@@ -52,7 +50,7 @@ export interface Instructor {
 
 export interface FullInstructor extends Instructor {
   FirstName: string
-  LastName: String
+  LastName: string
 }
 
 export interface ClassInstructor {

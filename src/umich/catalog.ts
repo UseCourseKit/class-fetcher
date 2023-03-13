@@ -1,6 +1,6 @@
 import assert from 'assert'
 import dayjs from 'dayjs'
-import customParseFormat from 'dayjs/plugin/customParseFormat'
+import customParseFormat from 'dayjs/plugin/customParseFormat.js'
 import timezone from 'dayjs/plugin/timezone'
 import type { CourseCatalog } from '../catalog'
 import { CourseInfo, CourseSchedule, EnrollmentStats, Meeting, Section } from '../entities'
@@ -17,6 +17,8 @@ dayjs.extend(timezone)
 // We unfortunately cannot retrieve past term codes via the SOC API
 export const termCodes = Object.freeze({
   'Fall 2023': 2460,
+  'Summer 2023': 2450,
+  'Spring/Summer 2023': 2440,
   'Spring 2023': 2430,
   'Winter 2023': 2420,
   'Fall 2022': 2410,
