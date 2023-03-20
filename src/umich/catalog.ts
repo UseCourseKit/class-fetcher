@@ -18,7 +18,7 @@ dayjs.extend(timezone)
 export const termCodes = Object.freeze({
   'Fall 2023': 2460,
   'Summer 2023': 2450,
-  'Spring/Summer 2023': 2440,
+  'Spring-Summer 2023': 2440,
   'Spring 2023': 2430,
   'Winter 2023': 2420,
   'Fall 2022': 2410,
