@@ -22,7 +22,7 @@ describe("test catalog", () => {
     expect(schedule!.sections[sectionCode]).toEqual(section)
   })
 
-  it("should handle courses with unschedule midterm exams", async () => {
+  it("should handle courses with unscheduled midterm exams", async () => {
     const course = 'EECS 203'
     const sectionCode = '099'
     const schedule = await client.fetchCourseSchedule('Fall 2023', course)
@@ -82,5 +82,14 @@ describe("test catalog", () => {
       id: 'mburak',
       name: 'Burak'
     }])
+  })
+
+  it('should detect courses with no description', async () => {
+    const comm = await client.fetchCourseInfo('Fall 2023', 'COMM 360')
+    expect(comm).not.toBeNull()
+    expect(comm?.description).toBeUndefined()
+
+    const comms = await client.fetchCourseInfo('Fall 2023', 'COMMS 111')
+    expect(comms).toBeNull()
   })
 })

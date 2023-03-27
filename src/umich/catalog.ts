@@ -171,7 +171,6 @@ export class UMichCatalog implements CourseCatalog {
       this.fetchSectionInstructors(term, course, sectionCode),
       this.fetchSectionMeetings(term, course, sectionCode)
     ])
-    if (meetings === null || meetings.length === 0) return null
     if (rawSections === null) return null
 
     const rawSection = rawSections.find(sect => sect.SectionNumber.toString() === sectionCode)
@@ -181,7 +180,7 @@ export class UMichCatalog implements CourseCatalog {
       ...parseBaseSection(rawSection),
       code: sectionCode,
       instructors: instructors ?? [],
-      meetings
+      meetings: meetings ?? []
     }
   }
 
@@ -210,15 +209,30 @@ export class UMichCatalog implements CourseCatalog {
 
   async fetchCourseInfo (term: string, code: string): Promise<CourseInfo | null> {
     const [subject, number] = code.split(/\s+/)
+
     const description = await this.fetchCourseDescription(term, subject, number)
-    if (description === null) { return null }
-    const split = splitDescription(description)
+    // Note: Some courses that exist don't have course descriptions with the registrar
+    // Example: COMM 360 in Fall 2023
+    const split = description === null ? null : splitDescription(description)
+
+    const getDescriptionFromSubjectListing = async () => {
+      const allDescr = await this.fetchAllSubjectDescriptions(term, subject)
+      if (allDescr === null) {
+        // This subject does not exist
+        return null
+      }
+      return allDescr[number] ?? null
+    }
+
+    const title = split?.title ?? await getDescriptionFromSubjectListing()
+    if (title == null) return null
+
     return {
       code,
       subject,
       catalogNumber: number,
-      description: split.details ?? undefined,
-      title: split.title
+      description: split?.details ?? undefined,
+      title
     }
   }
 
@@ -230,6 +244,17 @@ export class UMichCatalog implements CourseCatalog {
     const json: any = await res.json()
     const descr: string = json.getSOCCourseDescrResponse.CourseDescr
     return descr === 'No Course Description found.' ? null : descr
+  }
+
+  private async fetchAllSubjectDescriptions (term: string, subject: string): Promise<Record<string, string> | null> {
+    const termCode = termCodes[term as keyof typeof termCodes]
+    const res = await this.get(`/Terms/${termCode}/Schools/UM/Subjects/${subject}/CatalogNbrs`)
+    const json: any = await res.json()
+    if (Object.keys(json).includes("getSOCCtlgNbrsResponse") && Object.keys(json.getSOCCtlgNbrsResponse).includes("ClassOffered")) {
+      const offered = arrayify(json.getSOCCtlgNbrsResponse.ClassOffered)
+      return Object.fromEntries(offered.map(({ CatalogNumber, CourseDescr }) => [CatalogNumber.toString(), CourseDescr]))
+    }
+    return null
   }
 
   private async refreshTokenIfNeeded (): Promise<void> {
