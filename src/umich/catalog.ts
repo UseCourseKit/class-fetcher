@@ -27,7 +27,7 @@ export const termCodes = Object.freeze({
 })
 const endpointPrefix = Object.freeze('https://gw.api.it.umich.edu/um/Curriculum/SOC')
 
-export class UMichCatalog implements CourseCatalog {
+export class UMichCatalog implements CourseCatalog<true> {
   private accessToken: { value: string, expireAt: Date } | null = null
   private readonly searchers: { [term: string]: SearchEngine } = {}
   private readonly localIndexes: { [term: string]: CsvCatalogStore } = {}
@@ -48,7 +48,7 @@ export class UMichCatalog implements CourseCatalog {
     return Array.from(new Set(await this.searchers[term].runSearch(query)))
   }
 
-  async fetchCourseSchedule (term: string, course: string): Promise<CourseSchedule | null> {
+  async fetchCourseSchedule (term: string, course: string): Promise<CourseSchedule<true> | null> {
     const [subject, number] = course.split(/\s+/)
     const sections = await this.fetchCourseSections(term, subject, number)
     if (sections === null) return null
@@ -69,7 +69,7 @@ export class UMichCatalog implements CourseCatalog {
     }
   }
 
-  private async elaborateSection (section: AllSectionsSectionJson, meetings: Meeting[]): Promise<Section> {
+  private async elaborateSection (section: AllSectionsSectionJson, meetings: Meeting[]): Promise<Section & EnrollmentStats> {
     return {
       ...parseBaseSection(section),
       code: section.SectionNumber.toString(),
@@ -146,7 +146,7 @@ export class UMichCatalog implements CourseCatalog {
     return this.localIndexes[term].lookupByClassNumber(classNumber)
   }
 
-  async fetchSection (term: string, course: string, sectionCode: string): Promise<Section | null> {
+  async fetchSection (term: string, course: string, sectionCode: string): Promise<(Section & EnrollmentStats) | null> {
     const termCode = termCodes[term as keyof typeof termCodes]
     const [subject, number] = course.split(/\s+/)
     const res = await this.get(
@@ -184,7 +184,7 @@ export class UMichCatalog implements CourseCatalog {
     }
   }
 
-  async fetchClass (term: string, classNumber: number): Promise<{ section: Section, course: string } | null> {
+  async fetchClass (term: string, classNumber: number): Promise<{ section: Section & EnrollmentStats, course: string } | null> {
     const termCode = termCodes[term as keyof typeof termCodes]
     const res = await this.get(`/Terms/${termCode}/Classes/${classNumber}`)
     const json: any = await res.json()

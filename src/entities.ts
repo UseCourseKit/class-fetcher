@@ -56,14 +56,14 @@ export interface EnrollmentGroup {
   maxCredits: number
 }
 
-export interface CourseSchedule {
+export interface CourseSchedule<EnrollStats extends boolean = false> {
   /**
    * Unique identifier of the course, often including the subject and a catalog number.
    *
    * @example "EECS 280"
    */
   code: string
-  sections: { [code: string]: Section }
+  sections: { [code: string]: (EnrollStats extends true ? (Section & EnrollmentStats) : Section) }
   enrollmentGroups: EnrollmentGroup[]
 }
 
