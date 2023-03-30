@@ -1,7 +1,7 @@
 import assert from 'assert'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat.js'
-import timezone from 'dayjs/plugin/timezone'
+import timezone from 'dayjs/plugin/timezone.js'
 import type { CourseCatalog } from '../catalog'
 import { CourseInfo, CourseSchedule, EnrollmentStats, Meeting, Section } from '../entities'
 import { ClassInstructor, Instructor, AllSectionsSectionJson, SectionQuerySectionJson, FullMeetingElement, BaseSectionJson, ClassQuerySectionJson, FullInstructor } from './api_types'
@@ -334,7 +334,7 @@ function parseClassInstructor (instr: ClassInstructor): Section['instructors'][n
   }
   return {
     id: instr.InstrUniqname.toLowerCase(),
-    name: tokens.groups.last
+    name: tokens.groups.first + ' ' + tokens.groups.last
   }
 }
 
@@ -345,7 +345,7 @@ function parseFullInstructor (instr: FullInstructor): Section['instructors'][num
   }
   return {
     id: instr.Uniqname.toLowerCase(),
-    name: instr.LastName
+    name: instr.FirstName + ' ' + instr.LastName
   }
 }
 

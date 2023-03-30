@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import { join } from 'path'
-import utc from 'dayjs/plugin/utc'
-import timezone from 'dayjs/plugin/timezone'
+import utc from 'dayjs/plugin/utc.js'
+import timezone from 'dayjs/plugin/timezone.js'
 import dayjs from 'dayjs'
 
 dayjs.extend(utc)

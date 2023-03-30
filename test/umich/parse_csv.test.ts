@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import dayjs from 'dayjs'
-import utc from 'dayjs/plugin/utc'
-import timezone from 'dayjs/plugin/timezone'
+import utc from 'dayjs/plugin/utc.js'
+import timezone from 'dayjs/plugin/timezone.js'
 import { CsvCatalogStore, parseCsvRow } from '../../src/umich/local_db'
 
 dayjs.extend(utc)

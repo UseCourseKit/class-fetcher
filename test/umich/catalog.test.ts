@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import dayjs from 'dayjs'
-import utc from 'dayjs/plugin/utc'
-import timezone from 'dayjs/plugin/timezone'
+import utc from 'dayjs/plugin/utc.js'
+import timezone from 'dayjs/plugin/timezone.js'
 import { DayOfWeek, EnrollmentStats, Section } from '../../src/entities'
 import { UMichCatalog } from '../../src/umich/catalog'
 import * as dotenv from 'dotenv'
@@ -41,7 +41,7 @@ describe("test catalog", () => {
       seatsOpen: 2,
       classNumber: 21181,
       component: 'LAB',
-      instructors: [{id: 'mipeng', name: 'Peng'}],
+      instructors: [{id: 'mipeng', name: 'Michael Peng'}],
       meetings: [{
         days: new Set([DayOfWeek.Wednesday]),
         startDate: dayjs.utc('2023-01-04').tz('America/New_York').toDate(),
@@ -80,7 +80,7 @@ describe("test catalog", () => {
     expect(section005.meetings[0].location).toStrictEqual({code: 'REMOTE', lat: undefined, lon: undefined})
     expect(section005.instructors).toStrictEqual([{
       id: 'mburak',
-      name: 'Burak'
+      name: 'Mariana Burak'
     }])
   })
 
