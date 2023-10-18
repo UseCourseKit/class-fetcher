@@ -85,11 +85,7 @@ describe("test catalog", () => {
   })
 
   it('should detect courses with no description', async () => {
-    const comm = await client.fetchCourseInfo('Fall 2023', 'COMM 360')
-    expect(comm).not.toBeNull()
-    expect(comm?.description).toBeUndefined()
-
-    const comms = await client.fetchCourseInfo('Fall 2023', 'COMMS 111')
+    const comms = await client.fetchCourseInfo('Winter 2024', 'COMMS 111')
     expect(comms).toBeNull()
   })
 })

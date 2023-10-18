@@ -16,6 +16,7 @@ dayjs.extend(timezone)
 
 // We unfortunately cannot retrieve past term codes via the SOC API
 export const termCodes = Object.freeze({
+  'Winter 2024': 2470,
   'Fall 2023': 2460,
   'Summer 2023': 2450,
   'Spring-Summer 2023': 2440,
