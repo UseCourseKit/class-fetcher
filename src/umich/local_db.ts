@@ -85,7 +85,7 @@ export class CsvCatalogStore {
   private readonly lookupQuery: Database.Statement
 
   constructor (term: number) {
-    const dirname = __dirname ?? import.meta.dir
+    const dirname = import.meta.dirname
     this.db = new Database(join(dirname, 'soc', `${term}.sqlite3`), { readonly: true })
     this.lookupQuery = this.db.prepare('SELECT * FROM sections WHERE `Class Nbr` = ?')
   }

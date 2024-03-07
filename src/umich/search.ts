@@ -28,7 +28,7 @@ export default class SearchEngine {
   }
 
   static async create (term: number): Promise<SearchEngine> {
-    const dirname = __dirname ?? import.meta.dir
+    const dirname = import.meta.dirname
     const file = await readFile(join(dirname, 'soc', `${term}.json`), { encoding: 'utf-8' })
     const catalogList: CourseEntry[] = JSON.parse(file)
     return new SearchEngine(catalogList)

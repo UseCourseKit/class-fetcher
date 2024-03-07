@@ -21,10 +21,10 @@ function buildMeetingsMap (sections: AllSectionsSectionJson[]): { [code: string]
 
 describe('enrollment group generation', () => {
   it('should compute the correct clusters for a variety of popular courses', () => {
-    const files = readdirSync(join(__dirname, 'atlas-samples'))
+    const files = readdirSync(join(import.meta.dirname, 'atlas-samples'))
     for (const file of files) {
-      const expectedClusterList = JSON.parse(readFileSync(join(__dirname, 'atlas-samples', file), { encoding: 'utf-8' })).map((cluster: any[]) => cluster.filter(section => !section.includes('MID')))
-      let sections = JSON.parse(readFileSync(join(__dirname, 'soc-samples', file), { encoding: 'utf-8' })).getSOCSectionsResponse.Section
+      const expectedClusterList = JSON.parse(readFileSync(join(import.meta.dirname, 'atlas-samples', file), { encoding: 'utf-8' })).map((cluster: any[]) => cluster.filter(section => !section.includes('MID')))
+      let sections = JSON.parse(readFileSync(join(import.meta.dirname, 'soc-samples', file), { encoding: 'utf-8' })).getSOCSectionsResponse.Section
       if (!(sections instanceof Array)) sections = [sections]
       const meetingsMap = buildMeetingsMap(sections)
       expect(Array.from(allClusters(sections, meetingsMap)).sort()).toEqual(expectedClusterList.sort())
