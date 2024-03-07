@@ -7,8 +7,8 @@ import { allClusters } from '../../src/umich/clusters'
 import { parseMeeting } from '../../src/umich/datetime'
 import { arrayify } from '../../src/umich/util'
 
-function buildMeetingsMap(sections: AllSectionsSectionJson[]): {[code: string]: Meeting[]} {
-  const mapping: {[code: string]: Meeting[]} = {}
+function buildMeetingsMap (sections: AllSectionsSectionJson[]): { [code: string]: Meeting[] } {
+  const mapping: { [code: string]: Meeting[] } = {}
   for (const section of sections) {
     const rawMeetings = arrayify(section.Meeting ?? [])
     mapping[section.SectionNumber] = rawMeetings
@@ -23,9 +23,9 @@ describe('enrollment group generation', () => {
   it('should compute the correct clusters for a variety of popular courses', () => {
     const files = readdirSync(join(__dirname, 'atlas-samples'))
     for (const file of files) {
-      const expectedClusterList = JSON.parse(readFileSync(join(__dirname, 'atlas-samples', file), {encoding: 'utf-8'})).map((cluster: any[]) => cluster.filter(section => !section.includes('MID')))
-      let sections = JSON.parse(readFileSync(join(__dirname, 'soc-samples', file), {encoding: 'utf-8'})).getSOCSectionsResponse.Section
-      if (!(sections instanceof Array)) sections = [sections];
+      const expectedClusterList = JSON.parse(readFileSync(join(__dirname, 'atlas-samples', file), { encoding: 'utf-8' })).map((cluster: any[]) => cluster.filter(section => !section.includes('MID')))
+      let sections = JSON.parse(readFileSync(join(__dirname, 'soc-samples', file), { encoding: 'utf-8' })).getSOCSectionsResponse.Section
+      if (!(sections instanceof Array)) sections = [sections]
       const meetingsMap = buildMeetingsMap(sections)
       expect(Array.from(allClusters(sections, meetingsMap)).sort()).toEqual(expectedClusterList.sort())
       // 'Failed on ' + file.split('.')[0].toUpperCase())

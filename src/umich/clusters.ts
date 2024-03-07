@@ -6,7 +6,7 @@ import { meetingsOverlap } from './datetime'
 import { parseCreditHours } from './util'
 dayjs.extend(customParseFormat)
 
-function sectionsOverlap (sec1Raw: AllSectionsSectionJson, sec2Raw: AllSectionsSectionJson, meetingsMap: {[code: string]: Meeting[]}): boolean {
+function sectionsOverlap (sec1Raw: AllSectionsSectionJson, sec2Raw: AllSectionsSectionJson, meetingsMap: { [code: string]: Meeting[] }): boolean {
   const sec1 = { ...sec1Raw, meetings: meetingsMap[sec1Raw.SectionNumber] }
   const sec2 = { ...sec2Raw, meetings: meetingsMap[sec2Raw.SectionNumber] }
   for (const meet1 of sec1.meetings) {
@@ -19,7 +19,7 @@ function sectionsOverlap (sec1Raw: AllSectionsSectionJson, sec2Raw: AllSectionsS
   return false
 }
 
-export function allClusters (sections: AllSectionsSectionJson[], meetingsMap: {[code: string]: Meeting[]}): Set<string[]> {
+export function allClusters (sections: AllSectionsSectionJson[], meetingsMap: { [code: string]: Meeting[] }): Set<string[]> {
   const sectionMap = Object.fromEntries(sections.map(sect => [sect.SectionNumber, sect]))
   const components = new Set(sections.map((s) => s.SectionType))
   // Ignore midterm exams
@@ -88,7 +88,7 @@ export function allClusters (sections: AllSectionsSectionJson[], meetingsMap: {[
   )
 }
 
-export function allEnrollmentGroups (sections: AllSectionsSectionJson[], meetingsMap: {[code: string]: Meeting[]}): EnrollmentGroup[] {
+export function allEnrollmentGroups (sections: AllSectionsSectionJson[], meetingsMap: { [code: string]: Meeting[] }): EnrollmentGroup[] {
   const rawSectionLookup = Object.fromEntries(sections.map(json => [json.SectionNumber, json]))
   const groups = Array.from(allClusters(sections, meetingsMap)).map((cluster) => {
     const creditCounts = cluster.map(sectNum => parseCreditHours(rawSectionLookup[sectNum].CreditHours))

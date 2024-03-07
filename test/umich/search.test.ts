@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
-import { UMichCatalog } from "../../src";
+import { describe, expect, it } from 'vitest'
+import { UMichCatalog } from '../../src'
 
-const client = new UMichCatalog(process.env['UMICH_CLIENT_ID']!, process.env['UMICH_CLIENT_SECRET']!)
+const client = new UMichCatalog(process.env.UMICH_CLIENT_ID!, process.env.UMICH_CLIENT_SECRET!)
 
 describe('umich course search', () => {
   it('can discover courses by class name', async () => {

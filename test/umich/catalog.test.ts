@@ -10,10 +10,10 @@ dotenv.config()
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
-const client = new UMichCatalog(process.env['UMICH_CLIENT_ID']!, process.env['UMICH_CLIENT_SECRET']!)
+const client = new UMichCatalog(process.env.UMICH_CLIENT_ID!, process.env.UMICH_CLIENT_SECRET!)
 
-describe("test catalog", () => {
-  it("should fetch full sections in course schedule", async () => {
+describe('test catalog', () => {
+  it('should fetch full sections in course schedule', async () => {
     const course = 'MATH 116'
     const sectionCode = '112'
     const schedule = await client.fetchCourseSchedule('Winter 2023', course)
@@ -22,7 +22,7 @@ describe("test catalog", () => {
     expect(schedule!.sections[sectionCode]).toEqual(section)
   })
 
-  it("should handle courses with unscheduled midterm exams", async () => {
+  it('should handle courses with unscheduled midterm exams', async () => {
     const course = 'EECS 203'
     const sectionCode = '099'
     const schedule = await client.fetchCourseSchedule('Fall 2023', course)
@@ -41,7 +41,7 @@ describe("test catalog", () => {
       seatsOpen: 2,
       classNumber: 21181,
       component: 'LAB',
-      instructors: [{id: 'mipeng', name: 'Michael Peng'}],
+      instructors: [{ id: 'mipeng', name: 'Michael Peng' }],
       meetings: [{
         days: new Set([DayOfWeek.Wednesday]),
         startDate: dayjs.utc('2023-01-04').tz('America/New_York').toDate(),
@@ -77,7 +77,7 @@ describe("test catalog", () => {
     expect(section005.meetings[0].days).toStrictEqual(new Set([DayOfWeek.Wednesday]))
     expect(section005.meetings[0].startDate).toStrictEqual(dayjs.utc('2023-03-06').tz('America/New_York').toDate())
     expect(section005.meetings[0].endDate).toStrictEqual(dayjs.utc('2023-04-18').tz('America/New_York').toDate())
-    expect(section005.meetings[0].location).toStrictEqual({code: 'REMOTE', lat: undefined, lon: undefined})
+    expect(section005.meetings[0].location).toStrictEqual({ code: 'REMOTE', lat: undefined, lon: undefined })
     expect(section005.instructors).toStrictEqual([{
       id: 'mburak',
       name: 'Mariana Burak'
@@ -85,7 +85,17 @@ describe("test catalog", () => {
   })
 
   it('should detect courses with no description', async () => {
-    const comms = await client.fetchCourseInfo('Winter 2024', 'COMMS 111')
+    const comms = await client.fetchCourseInfo('Fall 2024', 'COMMS 111')
     expect(comms).toBeNull()
+  })
+
+  it('should work with the latest terms', async () => {
+    const eecs = await client.fetchCourseSchedule('Fall 2024', 'EECS 376')
+    expect(eecs).not.toBeNull()
+  })
+
+  it('should throw an exception for unknown terms', async () => {
+    await expect(() => client.fetchCourseInfo('Nonexistent 2024', 'EECS 110'))
+      .rejects.toThrowError('Unknown term "Nonexistent 2024"')
   })
 })

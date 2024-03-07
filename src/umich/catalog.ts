@@ -16,6 +16,7 @@ dayjs.extend(timezone)
 
 // We unfortunately cannot retrieve past term codes via the SOC API
 export const termCodes = Object.freeze({
+  'Fall 2024': 2510,
   'Winter 2024': 2470,
   'Fall 2023': 2460,
   'Summer 2023': 2450,
@@ -103,7 +104,7 @@ export class UMichCatalog implements CourseCatalog<true> {
   }
 
   private async fetchCourseSections (term: string, subject: string, number: string): Promise<AllSectionsSectionJson[] | null> {
-    const termCode = termCodes[term as keyof typeof termCodes]
+    const termCode = this.getTermCode(term)
     const res = await this.get(
       `/Terms/${termCode}/Schools/UM/Subjects/${subject}/CatalogNbrs/${number}/Sections?IncludeAllSections=Y`
     )
@@ -119,7 +120,7 @@ export class UMichCatalog implements CourseCatalog<true> {
   // First solution: Use the /Sections/XXX/Meetings endpoint
   // Second solution: Use the dates in soc/XXXX.csv
   private async fetchSectionMeetings (term: string, course: string, section: string): Promise<Meeting[] | null> {
-    const termCode = termCodes[term as keyof typeof termCodes]
+    const termCode = this.getTermCode(term)
     const [subject, number] = course.split(/\s+/)
     const res = await this.get(
       `/Terms/${termCode}/Schools/UM/Subjects/${subject}/CatalogNbrs/${number}/Sections/${section}/Meetings`
@@ -131,7 +132,7 @@ export class UMichCatalog implements CourseCatalog<true> {
   }
 
   private async fetchSectionInstructors (term: string, course: string, section: string): Promise<Section['instructors'] | null> {
-    const termCode = termCodes[term as keyof typeof termCodes]
+    const termCode = this.getTermCode(term)
     const [subject, number] = course.split(/\s+/)
     const res = await this.get(
       `/Terms/${termCode}/Schools/UM/Subjects/${subject}/CatalogNbrs/${number}/Sections/${section}/Instructors`
@@ -143,12 +144,12 @@ export class UMichCatalog implements CourseCatalog<true> {
   }
 
   private async lookupClassStore (term: string, classNumber: number): Promise<StoredMeetingInfo[]> {
-    this.localIndexes[term] ??= new CsvCatalogStore(termCodes[term as keyof typeof termCodes])
+    this.localIndexes[term] ??= new CsvCatalogStore(this.getTermCode(term))
     return this.localIndexes[term].lookupByClassNumber(classNumber)
   }
 
   async fetchSection (term: string, course: string, sectionCode: string): Promise<(Section & EnrollmentStats) | null> {
-    const termCode = termCodes[term as keyof typeof termCodes]
+    const termCode = this.getTermCode(term)
     const [subject, number] = course.split(/\s+/)
     const res = await this.get(
       `/Terms/${termCode}/Schools/UM/Subjects/${subject}/CatalogNbrs/${number}/Sections/${sectionCode}`
@@ -186,7 +187,7 @@ export class UMichCatalog implements CourseCatalog<true> {
   }
 
   async fetchClass (term: string, classNumber: number): Promise<{ section: Section & EnrollmentStats, course: string } | null> {
-    const termCode = termCodes[term as keyof typeof termCodes]
+    const termCode = this.getTermCode(term)
     const res = await this.get(`/Terms/${termCode}/Classes/${classNumber}`)
     const json: any = await res.json()
     const section: ClassQuerySectionJson = json.getSOCSectionListByNbrResponse.ClassOffered
@@ -216,7 +217,7 @@ export class UMichCatalog implements CourseCatalog<true> {
     // Example: COMM 360 in Fall 2023
     const split = description === null ? null : splitDescription(description)
 
-    const getDescriptionFromSubjectListing = async () => {
+    const getDescriptionFromSubjectListing = async (): Promise<string|null> => {
       const allDescr = await this.fetchAllSubjectDescriptions(term, subject)
       if (allDescr === null) {
         // This subject does not exist
@@ -238,7 +239,7 @@ export class UMichCatalog implements CourseCatalog<true> {
   }
 
   async fetchCourseDescription (term: string, subject: string, number: string | number): Promise<string | null> {
-    const termCode = termCodes[term as keyof typeof termCodes]
+    const termCode = this.getTermCode(term)
     const res = await this.get(
       `/Terms/${termCode}/Schools/UM/Subjects/${subject}/CatalogNbrs/${number}`
     )
@@ -248,10 +249,10 @@ export class UMichCatalog implements CourseCatalog<true> {
   }
 
   private async fetchAllSubjectDescriptions (term: string, subject: string): Promise<Record<string, string> | null> {
-    const termCode = termCodes[term as keyof typeof termCodes]
+    const termCode = this.getTermCode(term)
     const res = await this.get(`/Terms/${termCode}/Schools/UM/Subjects/${subject}/CatalogNbrs`)
     const json: any = await res.json()
-    if (Object.keys(json).includes("getSOCCtlgNbrsResponse") && Object.keys(json.getSOCCtlgNbrsResponse).includes("ClassOffered")) {
+    if (Object.keys(json).includes('getSOCCtlgNbrsResponse') && Object.keys(json.getSOCCtlgNbrsResponse).includes('ClassOffered')) {
       const offered = arrayify(json.getSOCCtlgNbrsResponse.ClassOffered)
       return Object.fromEntries(offered.map(({ CatalogNumber, CourseDescr }) => [CatalogNumber.toString(), CourseDescr]))
     }
@@ -299,6 +300,13 @@ export class UMichCatalog implements CourseCatalog<true> {
       throw new Error(`fetch failed: ${res.statusText}`)
     }
     return res
+  }
+
+  private getTermCode (term: string): number {
+    if (!(term in termCodes)) {
+      throw new RangeError(`Unknown term ${JSON.stringify(term)}`)
+    }
+    return termCodes[term as keyof typeof termCodes];
   }
 }
 
