@@ -91,7 +91,7 @@ export class CsvCatalogStore {
   }
 
   lookupByClassNumber (classNumber: number): StoredMeetingInfo[] {
-    const rows: CsvRow[] = this.lookupQuery.all(classNumber.toString())
+    const rows = this.lookupQuery.all(classNumber.toString()) as CsvRow[]
     return rows.map(parseCsvRow)
   }
 }
